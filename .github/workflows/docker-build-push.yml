@@ -19,10 +19,12 @@ jobs:
       - name: Check Docker version
         run: docker --version
       
-      # Simplify - just use standard Docker instead of Buildx for now
+      # Simplify - just use standard Docker command
       - name: Build Docker image
         run: |
-          docker build -t ${DOCKER_USERNAME}/ai-toc-builder:latest .
+          # Ensure we're using the standard Docker build (not buildx)
+          docker version
+          docker build -t "$DOCKER_USERNAME/ai-toc-builder:latest" .
           docker images
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
