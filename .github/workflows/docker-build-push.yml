@@ -7,9 +7,6 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
-env:
-  IMAGE_NAME: joakimanimate90/ai-toc-builder
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,32 +15,49 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ env.IMAGE_NAME }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=ref,event=branch
-            type=sha,format=short
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache
-          cache-to: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache,mode=max
+      # Display Docker version for debugging
+      - name: Check Docker version
+        run: docker --version
+      
+      # Simplify - just use standard Docker instead of Buildx for now
+      - name: Build Docker image
+        run: |
+          docker build -t ${DOCKER_USERNAME}/ai-toc-builder:latest .
+          docker images
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      
+      # Login to Docker Hub
+      - name: Login to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKER_TOKEN }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          echo "Logged in to Docker Hub as ${{ secrets.DOCKER_USERNAME }}"
+      
+      # Push the image with detailed debugging
+      - name: Push Docker image
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "Checking Docker Hub repositories..."
+          # Ensure lowercase repository name for Docker Hub
+          REPO_NAME="ai-toc-builder"
+          REPO_NAME_LOWER=$(echo $REPO_NAME | tr '[:upper:]' '[:lower:]')
+          DOCKER_USERNAME_LOWER=$(echo ${DOCKER_USERNAME} | tr '[:upper:]' '[:lower:]')
+          
+          echo "Attempting to push to: ${DOCKER_USERNAME_LOWER}/${REPO_NAME_LOWER}:latest"
+          # Tag with lowercase to ensure Docker Hub compatibility
+          docker tag ${DOCKER_USERNAME}/ai-toc-builder:latest ${DOCKER_USERNAME_LOWER}/${REPO_NAME_LOWER}:latest
+          
+          # Push with detailed output
+          docker push --debug ${DOCKER_USERNAME_LOWER}/${REPO_NAME_LOWER}:latest || {
+            echo "Push failed. This could be because:"
+            echo "1. The repository doesn't exist yet and needs to be created manually"
+            echo "2. The Docker token doesn't have push access to this repository"
+            echo "3. There's a namespace issue with the Docker username"
+            
+            echo "Trying fallback approach..."
+            # Try different tagging approach as fallback
+            docker tag ${DOCKER_USERNAME}/ai-toc-builder:latest docker.io/${DOCKER_USERNAME_LOWER}/${REPO_NAME_LOWER}:latest
+            docker push docker.io/${DOCKER_USERNAME_LOWER}/${REPO_NAME_LOWER}:latest
+          }
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
