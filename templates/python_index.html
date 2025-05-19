@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Based Table of Content Builder</title>
+    <link href="/static/css/styles.css" rel="stylesheet">
+    <script src="/static/js/main.js" defer></script>
+</head>
+<body class="transition-colors duration-200" x-data="{ activeTab: 'image', processingMode: 'individual', darkMode: localStorage.getItem('darkMode') === 'true' }" 
+    :class="{ 'dark bg-darkBg text-gray-100': darkMode, 'bg-[#FFFFFF] text-gray-900': !darkMode }">
+    
+    <!-- Enhanced Navigation Bar with Inline Styles -->
+    <nav style="background: linear-gradient(to right, #1e40af, #4f46e5); color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+        <!-- Top app bar with logo and title -->
+        <div style="max-width: 1280px; margin: 0 auto; padding: 0.75rem 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <!-- Logo/Icon -->
+                    <div style="padding: 0.5rem; background-color: white; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);">
+                        <svg xmlns="http://www.w3.org/2000/svg" style="height: 2rem; width: 2rem; color: #2563eb;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <!-- Title and subtitle -->
+                    <div>
+                        <h1 style="font-size: 1.5rem; font-weight: bold; letter-spacing: -0.025em;">AI Based Table of Content Builder</h1>
+                        <p style="font-size: 0.875rem; color: #bfdbfe;">Generate structured TOCs from documents, images, and URLs</p>
+                    </div>
+                </div>
+                <!-- Controls -->
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <a href="https://github.com/Joakim-animate90/Ai_Based_Toc_Builder_ui" target="_blank" style="display: flex; align-items: center; font-size: 0.875rem; color: white; text-decoration: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" style="height: 1.25rem; width: 1.25rem; margin-right: 0.25rem;" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        </svg>
+                        GitHub
+                    </a>
+                    <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode)" style="padding: 0.5rem; border-radius: 9999px; cursor: pointer; background: none; border: none; color: white;">
+                        <svg x-show="!darkMode" xmlns="http://www.w3.org/2000/svg" style="height: 1.25rem; width: 1.25rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                        <svg x-show="darkMode" xmlns="http://www.w3.org/2000/svg" style="height: 1.25rem; width: 1.25rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="min-h-screen py-6">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="mb-6 rounded-lg shadow" :class="{ 'bg-darkSurface text-darkTextPrimary': darkMode, 'bg-white': !darkMode }">
+                <!-- Tabs -->
+                <div class="flex border-b" :class="{ 'border-darkBorder': darkMode, 'border-gray-200': !darkMode }">
+                    <button @click="activeTab = 'image'" class="px-4 py-3 flex items-center space-x-2 border-b-2 font-medium transition-colors" 
+                            :class="activeTab === 'image' ? 'border-primary text-primary dark:border-darkPrimary dark:text-darkPrimary' : 'border-transparent hover:text-primary dark:hover:text-darkPrimary'">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>Image Upload</span>
+                    </button>
+                    <button @click="activeTab = 'document'" class="px-4 py-3 flex items-center space-x-2 border-b-2 font-medium transition-colors" 
+                            :class="activeTab === 'document' ? 'border-primary text-primary dark:border-darkPrimary dark:text-darkPrimary' : 'border-transparent hover:text-primary dark:hover:text-darkPrimary'">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span>Document Upload</span>
+                    </button>
+                    <button @click="activeTab = 'batch'" class="px-4 py-3 flex items-center space-x-2 border-b-2 font-medium transition-colors" 
+                            :class="activeTab === 'batch' ? 'border-primary text-primary dark:border-darkPrimary dark:text-darkPrimary' : 'border-transparent hover:text-primary dark:hover:text-darkPrimary'">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                        </svg>
+                        <span>Batch Upload</span>
+                    </button>
+                    <button @click="activeTab = 'url'" class="px-4 py-3 flex items-center space-x-2 border-b-2 font-medium transition-colors" 
+                            :class="activeTab === 'url' ? 'border-primary text-primary dark:border-darkPrimary dark:text-darkPrimary' : 'border-transparent hover:text-primary dark:hover:text-darkPrimary'">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        <span>URL Input</span>
+                    </button>
+                </div>
+
+                <div class="p-6">
+                    <!-- Image Upload Tab -->
+                    <div x-show="activeTab === 'image'" 
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 transform scale-95"
+                         x-transition:enter-end="opacity-100 transform scale-100"
+                         class="space-y-6">
+                        
+                        <div class="bg-gray-50 p-6 rounded-lg dark:bg-darkElevated">
+                            <h2 class="text-xl font-medium mb-4">Upload an Image</h2>
+                            <p class="text-gray-600 dark:text-darkTextSecondary mb-4">Upload an image of a page containing text to generate a table of contents.</p>
+                            
+                            <div id="imageDropzone" class="border-2 border-dashed border-gray-300 dark:border-darkBorder rounded-lg p-8 text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-darkHover transition" onclick="document.getElementById('imageInput').click()">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400 dark:text-darkTextSecondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <p class="mt-2 text-sm text-gray-600 dark:text-darkTextSecondary">Drag and drop an image, or click to browse</p>
+                                <input type="file" id="imageInput" class="hidden" accept="image/*" onclick="event.stopPropagation()">
+                            </div>
+                            
+                            <div id="imagePreview" class="mt-4 hidden">
+                                <div class="relative">
+                                    <img id="previewImage" class="max-h-64 rounded mx-auto" src="" alt="Preview">
+                                    <button id="removeImage" class="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <p id="imageNameDisplay" class="mt-2 text-sm text-center text-gray-600 dark:text-darkTextSecondary"></p>
+                            </div>
+                            
+                            <button id="processImageBtn" class="mt-4 w-full py-2 px-4 bg-primary text-white dark:bg-darkPrimary rounded disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                Process Image
+                            </button>
+                            
+                            <button style="margin-top: 1rem; width: 100%; padding: 0.75rem 1rem; background-color: #f59e0b; color: white; font-size: 1.25rem; font-weight: 500; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); display: flex; align-items: center; justify-content: center;">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Coming Soon
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Document Upload Tab -->
+                    <div x-show="activeTab === 'document'" 
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 transform scale-95"
+                         x-transition:enter-end="opacity-100 transform scale-100"
+                         class="space-y-6">
+                        
+                        <div class="bg-gray-50 p-6 rounded-lg dark:bg-darkElevated">
+                            <h2 class="text-xl font-medium mb-4">Upload a Document</h2>
+                            <p class="text-gray-600 dark:text-darkTextSecondary mb-4">Upload a PDF or document file to generate a table of contents.</p>
+                            
+                            <!-- Document upload area as a div, not a form -->
+                            <div id="documentDropzone" class="border-2 border-dashed border-gray-300 dark:border-darkBorder rounded-lg p-8 text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-darkHover transition" onclick="document.getElementById('documentInput').click()">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400 dark:text-darkTextSecondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <p class="mt-2 text-sm text-gray-600 dark:text-darkTextSecondary">Drag and drop a document, or click to browse</p>
+                                <input type="file" id="documentInput" class="hidden" accept=".pdf,.doc,.docx" onclick="event.stopPropagation()">
+                            </div>
+                            
+                            <div id="documentPreview" class="mt-4 hidden">
+                                <div class="flex items-center bg-gray-100 dark:bg-darkBorder p-2 rounded">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500 dark:text-darkTextSecondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <div class="ml-2 overflow-hidden">
+                                        <p id="documentNameDisplay" class="text-xs font-medium truncate"></p>
+                                        <p id="documentSizeDisplay" class="text-xs text-gray-500 dark:text-darkTextSecondary"></p>
+                                    </div>
+                                    <button id="removeDocument" class="ml-auto bg-red-500 text-white p-1 rounded-full hover:bg-red-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <button id="processDocumentBtn" style="margin-top: 1rem; width: 100%; padding: 0.75rem 1rem; background-color: #16a34a; color: white; font-size: 1.25rem; font-weight: 500; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+                                Submit Document
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- URL Input Tab -->
+                    <div x-show="activeTab === 'url'" 
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 transform scale-95"
+                         x-transition:enter-end="opacity-100 transform scale-100"
+                         class="space-y-6">
+                        
+                        <div class="bg-gray-50 p-6 rounded-lg dark:bg-darkElevated">
+                            <h2 class="text-xl font-medium mb-4">Process URL</h2>
+                            <p class="text-gray-600 dark:text-darkTextSecondary mb-4">Enter a URL to a PDF or webpage to generate a table of contents.</p>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="urlInput" class="block text-sm font-medium mb-1">URL</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                            </svg>
+                                        </div>
+                                        <input type="url" id="urlInput" class="block w-full pl-10 pr-12 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-darkInput dark:border-darkBorder dark:text-darkTextPrimary" 
+                                               placeholder="https://example.com/document.pdf">
+                                        <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                            <button id="clearUrlBtn" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="urlTypeSelect" class="block text-sm font-medium mb-1">Content Type</label>
+                                    <select id="urlTypeSelect" class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-darkInput dark:border-darkBorder dark:text-darkTextPrimary">
+                                        <option value="auto">Auto-detect</option>
+                                        <option value="pdf">PDF Document</option>
+                                        <option value="webpage">Webpage</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="maxUrlPages" class="block text-sm font-medium mb-1">Max Pages to Process</label>
+                                    <input type="number" id="maxUrlPages" class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-darkInput dark:border-darkBorder dark:text-darkTextPrimary" 
+                                           min="1" max="100" value="20">
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-darkTextSecondary">For large documents, processing may take longer</p>
+                                </div>
+                            </div>
+                            
+                            <div id="urlPreview" class="mt-4 hidden">
+                                <div class="flex items-center justify-between bg-gray-100 dark:bg-darkBorder p-3 rounded">
+                                    <div class="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary dark:text-darkPrimary mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        <span id="urlValidStatus" class="text-sm">URL validated</span>
+                                    </div>
+                                    <span id="urlTypeDisplay" class="text-xs px-2 py-1 bg-primary text-white dark:bg-darkPrimary rounded-full">PDF</span>
+                                </div>
+                            </div>
+                            
+                            <button id="processUrlBtn" style="margin-top: 1.5rem; width: 100%; padding: 0.75rem 1rem; background-color: #16a34a; color: white; font-size: 1.25rem; font-weight: 500; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+                                Submit URL
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Batch Upload Tab -->
+                    <div x-show="activeTab === 'batch'" 
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 transform scale-95"
+                         x-transition:enter-end="opacity-100 transform scale-100"
+                         class="space-y-6">
+                        
+                        <div class="bg-gray-50 p-6 rounded-lg dark:bg-darkElevated">
+                            <h2 class="text-xl font-medium mb-4">Batch Upload</h2>
+                            <p class="text-gray-600 dark:text-darkTextSecondary mb-4">Upload multiple files at once to process them in batch.</p>
+                            
+                            <div class="flex space-x-4 mb-4">
+                                <button @click="processingMode = 'individual'" 
+                                        class="flex-1 py-2 rounded-md border"
+                                        :class="processingMode === 'individual' ? 'bg-primary text-white border-primary dark:bg-darkPrimary dark:border-darkPrimary' : 'bg-white text-gray-800 border-gray-300 dark:bg-darkElevated dark:text-darkTextPrimary dark:border-darkBorder'">
+                                    Individual TOCs
+                                </button>
+                                <button @click="processingMode = 'combined'" 
+                                        class="flex-1 py-2 rounded-md border"
+                                        :class="processingMode === 'combined' ? 'bg-primary text-white border-primary dark:bg-darkPrimary dark:border-darkPrimary' : 'bg-white text-gray-800 border-gray-300 dark:bg-darkElevated dark:text-darkTextPrimary dark:border-darkBorder'">
+                                    Combined TOC
+                                </button>
+                            </div>
+                            
+                            <div id="batchDropzone" class="border-2 border-dashed border-gray-300 dark:border-darkBorder rounded-lg p-8 text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-darkHover transition" onclick="document.getElementById('batchImageInput').click()">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400 dark:text-darkTextSecondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                                </svg>
+                                <p class="mt-2 text-sm text-gray-600 dark:text-darkTextSecondary">Drag and drop multiple files, or click to browse</p>
+                                <input type="file" id="batchImageInput" class="hidden" accept="image/*,.pdf,.doc,.docx" multiple onclick="event.stopPropagation()">
+                            </div>
+                            
+                            <div id="batchFileList" class="mt-4 hidden">
+                                <h3 class="font-medium mb-2">Selected Files</h3>
+                                <div id="batchFiles" class="max-h-60 overflow-y-auto space-y-2"></div>
+                            </div>
+                            
+                            <div id="batchProgress" class="mt-4 hidden">
+                                <div class="w-full bg-gray-200 dark:bg-darkBorder rounded-full h-2.5">
+                                    <div id="batchProgressBar" class="bg-primary dark:bg-darkPrimary h-2.5 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <p id="batchProgressCount" class="text-xs text-center mt-1 text-gray-600 dark:text-darkTextSecondary">0/0 files</p>
+                            </div>
+                            
+                            <button id="batchProcessBtn" class="mt-4 w-full py-2 px-4 bg-primary text-white dark:bg-darkPrimary rounded disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                Process Batch
+                            </button>
+                            
+                            <button style="margin-top: 1rem; width: 100%; padding: 0.75rem 1rem; background-color: #f59e0b; color: white; font-size: 1.25rem; font-weight: 500; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); display: flex; align-items: center; justify-content: center;">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Coming Soon
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress and Results -->
+            <div id="results" class="hidden space-y-6 rounded-lg shadow" :class="{ 'bg-darkSurface text-darkTextPrimary': darkMode, 'bg-white': !darkMode }">
+                <div class="p-6">
+                    <h2 class="text-xl font-medium mb-4">Table of Contents</h2>
+                    
+                    <div id="tocResults" class="border rounded-lg p-4 min-h-40 max-h-96 overflow-y-auto" :class="{ 'border-darkBorder': darkMode, 'border-gray-200': !darkMode }">
+                        <!-- TOC results will be displayed here -->
+                    </div>
+                    
+                    <div class="mt-4 flex space-x-4">
+                        <button id="copyTocBtn" class="flex-1 py-2 px-4 bg-gray-100 text-gray-800 dark:bg-darkElevated dark:text-darkTextPrimary rounded hover:bg-gray-200 dark:hover:bg-darkHover">
+                            <span class="flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                                Copy to Clipboard
+                            </span>
+                        </button>
+                        <button id="downloadTocBtn" class="flex-1 py-2 px-4 bg-primary text-white dark:bg-darkPrimary rounded hover:bg-primaryDark dark:hover:bg-darkPrimaryDark">
+                            <span class="flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Download
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/js/imagePreview.js"></script>
+    <script src="/static/js/formHandler.js"></script>
+    <script src="/static/js/batchHandler.js"></script>
+    <script src="/static/js/documentHandler.js"></script>
+    <script src="/static/js/urlHandler.js"></script>
+    
+    <!-- Direct button event handler as backup -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Direct event handler for document submit button
+        const processDocBtn = document.getElementById('processDocumentBtn');
+        if (processDocBtn) {
+            console.log('Adding direct event handler to document submit button');
+            processDocBtn.addEventListener('click', function(e) {
+                console.log('Document submit button clicked directly');
+                e.preventDefault();
+                
+                // Get the document handler function if available
+                if (window.convertDocument) {
+                    window.convertDocument();
+                } else {
+                    // Direct implementation if the function isn't available
+                    const documentInput = document.getElementById('documentInput');
+                    if (documentInput && documentInput.files[0]) {
+                        const file = documentInput.files[0];
+                        console.log('Processing document:', file.name);
+                        
+                        // Show processing state
+                        this.disabled = true;
+                        this.innerHTML = `
+                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Processing...`;
+                        
+                        // Create form data
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        formData.append('filename', file.name);
+                        formData.append('max_pages', 5);
+                        
+                        // Send request
+                        fetch('http://localhost:8000/api/v1/toc/extract-from-browser', {
+                            method: 'POST',
+                            body: formData,
+                            mode: 'cors'
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(data => {
+                                    throw new Error(data.detail || 'TOC extraction failed');
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(result => {
+                            console.log('Success:', result);
+                            // Find the displayTocResults function if available
+                            if (window.displayTocResults) {
+                                window.displayTocResults(result);
+                            } else {
+                                alert('TOC extraction successful! Check console for details.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Failed to extract TOC: ' + error.message);
+                        })
+                        .finally(() => {
+                            this.disabled = false;
+                            this.innerHTML = 'Submit Document';
+                        });
+                    } else {
+                        alert('Please select a document file first');
+                    }
+                }
+            });
+        }
+    });
+    </script>
+</body>
+</html>
