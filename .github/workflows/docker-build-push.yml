@@ -19,47 +19,48 @@ jobs:
       - name: Check Docker version
         run: docker --version
       
-      # Simplify - just use standard Docker command
+      # Simplify - just use standard Docker command with sanitized variables
+      - name: Set up environment variables
+        run: |
+          # Clean up Docker username (remove any whitespace or newlines)
+          CLEAN_USERNAME=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr -d '\n\r' | xargs)
+          echo "CLEAN_USERNAME=$CLEAN_USERNAME" >> $GITHUB_ENV
+          echo "Using sanitized username: $CLEAN_USERNAME"
+          
       - name: Build Docker image
         run: |
           # Ensure we're using the standard Docker build (not buildx)
           docker version
-          docker build -t "$DOCKER_USERNAME/ai-toc-builder:latest" .
+          docker build -t "$CLEAN_USERNAME/ai-toc-builder:latest" .
           docker images
         env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          CLEAN_USERNAME: ${{ env.CLEAN_USERNAME }}
       
-      # Login to Docker Hub
+      # Login to Docker Hub with sanitized credentials
       - name: Login to Docker Hub
         run: |
-          echo "${{ secrets.DOCKER_TOKEN }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          echo "Logged in to Docker Hub as ${{ secrets.DOCKER_USERNAME }}"
+          echo "${{ secrets.DOCKER_TOKEN }}" | docker login -u "$CLEAN_USERNAME" --password-stdin
+          echo "Logged in to Docker Hub as $CLEAN_USERNAME"
       
-      # Push the image with detailed debugging
+      # Push the image - simplified and using sanitized username
       - name: Push Docker image
         if: github.event_name != 'pull_request'
         run: |
-          echo "Checking Docker Hub repositories..."
-          # Ensure lowercase repository name for Docker Hub
+          echo "Pushing Docker image to Docker Hub..."
+          # Ensure repository name is lowercase (Docker Hub requirement)
           REPO_NAME="ai-toc-builder"
           REPO_NAME_LOWER=$(echo $REPO_NAME | tr '[:upper:]' '[:lower:]')
-          DOCKER_USERNAME_LOWER=$(echo ${DOCKER_USERNAME} | tr '[:upper:]' '[:lower:]')
           
-          echo "Attempting to push to: ${DOCKER_USERNAME_LOWER}/${REPO_NAME_LOWER}:latest"
-          # Tag with lowercase to ensure Docker Hub compatibility
-          docker tag ${DOCKER_USERNAME}/ai-toc-builder:latest ${DOCKER_USERNAME_LOWER}/${REPO_NAME_LOWER}:latest
+          echo "Attempting to push to: $CLEAN_USERNAME/$REPO_NAME_LOWER:latest"
           
-          # Push with detailed output
-          docker push --debug ${DOCKER_USERNAME_LOWER}/${REPO_NAME_LOWER}:latest || {
+          # Direct push (no need to re-tag since we built with the correct tag)
+          docker push "$CLEAN_USERNAME/$REPO_NAME_LOWER:latest" || {
             echo "Push failed. This could be because:"
-            echo "1. The repository doesn't exist yet and needs to be created manually"
-            echo "2. The Docker token doesn't have push access to this repository"
-            echo "3. There's a namespace issue with the Docker username"
+            echo "1. The repository doesn't exist yet (create it manually on Docker Hub)"
+            echo "2. The Docker token doesn't have push access permissions"
+            echo "3. There might be an issue with Docker Hub connectivity"
             
-            echo "Trying fallback approach..."
-            # Try different tagging approach as fallback
-            docker tag ${DOCKER_USERNAME}/ai-toc-builder:latest docker.io/${DOCKER_USERNAME_LOWER}/${REPO_NAME_LOWER}:latest
-            docker push docker.io/${DOCKER_USERNAME_LOWER}/${REPO_NAME_LOWER}:latest
+            echo "For debugging, trying to explicitly tag with docker.io prefix..."
+            docker tag "$CLEAN_USERNAME/$REPO_NAME_LOWER:latest" "docker.io/$CLEAN_USERNAME/$REPO_NAME_LOWER:latest"
+            docker push "docker.io/$CLEAN_USERNAME/$REPO_NAME_LOWER:latest"
           }
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
