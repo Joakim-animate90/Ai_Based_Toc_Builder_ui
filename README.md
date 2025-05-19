@@ -5,7 +5,13 @@
 
 An intelligent web application that automatically generates structured tables of contents from various sources including PDFs, documents, images, and URLs using AI.
 
-![App Screenshot](static/assets/toc-builder-screenshot.png)
+## Screenshots
+
+### Document Upload Interface
+![Document Upload Interface](static/assets/document_upload.png)
+
+### URL Processing Interface
+![URL Processing Interface](static/assets/url_input.png)
 
 ## Features
 
