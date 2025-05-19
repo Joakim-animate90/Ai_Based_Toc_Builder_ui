@@ -1,5 +1,8 @@
 FROM python:3.9-slim
 
+# Define build arguments
+ARG API_URL=http://localhost:8000
+
 WORKDIR /app
 
 # Install Node.js and npm
@@ -37,6 +40,7 @@ EXPOSE 5000
 # Set environment variables
 ENV FLASK_APP=app.py
 ENV PYTHONUNBUFFERED=1
+ENV API_URL=${API_URL}
 
-# Command to run the application
-CMD ["python", "app.py"]
+# Command to run the application with Gunicorn for better production performance
+CMD ["gunicorn", "--config", "gunicorn_config.py", "app:app"]

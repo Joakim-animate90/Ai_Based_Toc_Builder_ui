@@ -1,41 +1,48 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory, send_file
+from flask import Flask, render_template, send_from_directory
 import os
-import tempfile
-import time
-import json
-import urllib.parse
-from werkzeug.utils import secure_filename
-from datetime import datetime
+from dotenv import load_dotenv
+from flask_caching import Cache
+
+# Load environment variables from .env file if it exists
+load_dotenv()
 
 app = Flask(__name__, 
             template_folder='templates',
             static_folder='static')
 
-# Configure upload folder
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-# Set to None to disable the file size limit completely
-app.config['MAX_CONTENT_LENGTH'] = None  # No file size limit
+# Configure caching
+cache_config = {
+    "DEBUG": False,
+    "CACHE_TYPE": "SimpleCache",
+    "CACHE_DEFAULT_TIMEOUT": 300  # 5 minutes
+}
+app.config.from_mapping(cache_config)
+cache = Cache(app)
 
-# Configure for large file handling
-app.config['MAX_CONTENT_PATH'] = os.path.join(app.config['UPLOAD_FOLDER'], 'large_files')
-os.makedirs(app.config['MAX_CONTENT_PATH'], exist_ok=True)
 
-# Allowed file types
-ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'heic', 'heif', 'doc', 'docx', 'txt'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+# API URL configuration
+API_URL = os.environ.get('API_URL', 'http://localhost:8000')
 
 @app.route('/')
+@cache.cached(timeout=60)  # Cache the homepage for 1 minute
 def index():
-    return render_template('python_index.html')
+    return render_template('python_index.html', api_url=API_URL)
 
 @app.route('/static/<path:path>')
+@cache.cached(timeout=3600)  # Cache static assets for 1 hour
 def serve_static(path):
     return send_from_directory('static', path)
 
-#
+
+    
+@app.errorhandler(500)  # Internal Server Error
+def internal_error(e):
+    return {"error": "An internal server error occurred. Our team has been notified."}, 500
+
+# Add this configuration for better performance
+app.config['PROPAGATE_EXCEPTIONS'] = True
+app.config['PREFERRED_URL_SCHEME'] = 'https'
+
+# Make the app listen on all interfaces for Docker/production deployment
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(host='0.0.0.0', debug=False, port=5000)

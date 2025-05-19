@@ -31,7 +31,8 @@ jobs:
         run: |
           # Ensure we're using the standard Docker build (not buildx)
           docker version
-          docker build -t "$CLEAN_USERNAME/ai-toc-builder:latest" .
+          # Build with API_URL as a build arg
+          docker build --build-arg API_URL=${API_URL:-http://localhost:8000} -t "$CLEAN_USERNAME/ai-toc-builder:latest" .
           docker images
         env:
           CLEAN_USERNAME: ${{ env.CLEAN_USERNAME }}

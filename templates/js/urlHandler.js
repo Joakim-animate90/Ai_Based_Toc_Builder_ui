@@ -144,7 +144,7 @@ document.addEventListener("DOMContentLoaded", function () {
             console.log("Sending URL data to API", state.url, state.urlType);
             
             // Use the dedicated API endpoint for URL extraction
-            const response = await fetch("http://localhost:8000/api/v1/toc/extract-from-url", {
+            const response = await fetch(`${API_BASE_URL}/api/v1/toc/extract-from-url`, {
                 method: "POST",
                 body: JSON.stringify(payload),
                 headers: {
@@ -171,7 +171,7 @@ document.addEventListener("DOMContentLoaded", function () {
             // Check if it's a network error (like the API server is not running)
             if (error.message === 'Failed to fetch') {
                 errorMessage = 'Cannot connect to the API server. Please ensure the FastAPI server is running on port 3000.';
-                console.log('Make sure your FastAPI server is running with CORS enabled at http://localhost:8000');
+                console.log(`Make sure your FastAPI server is running with CORS enabled at ${API_BASE_URL}`);
             }
             
             alert("Failed to process URL: " + errorMessage);

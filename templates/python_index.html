@@ -330,6 +330,12 @@
         </div>
     </main>
 
+    <!-- API URL from environment variable -->
+    <script>
+        // This variable will be available globally for all scripts
+        const API_BASE_URL = "{{ api_url }}";
+    </script>
+    
     <script src="/static/js/imagePreview.js"></script>
     <script src="/static/js/formHandler.js"></script>
     <script src="/static/js/batchHandler.js"></script>
@@ -373,7 +379,7 @@
                         formData.append('max_pages', 5);
                         
                         // Send request
-                        fetch('http://localhost:8000/api/v1/toc/extract-from-browser', {
+                        fetch(API_BASE_URL + '/api/v1/toc/extract-from-browser', {
                             method: 'POST',
                             body: formData,
                             mode: 'cors'
