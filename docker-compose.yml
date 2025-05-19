@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  toc-ui:
+    build:
+      context: .
+      args:
+        - API_URL=${API_URL:-http://localhost:8000}
+    image: ai-toc-builder:latest
+    container_name: ai-toc-builder-ui
+    ports:
+      - "5000:5000"
+    environment:
+      - API_URL=${API_URL:-http://localhost:8000}
+    restart: unless-stopped
+    volumes:
+      - toc-data:/app/uploads
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+
+volumes:
+  toc-data:
+    driver: local
